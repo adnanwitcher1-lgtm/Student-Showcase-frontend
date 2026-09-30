@@ -5,6 +5,12 @@ import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
+// VITE_API_URL (jaise https://showcase-backend-ip42.onrender.com/api) se
+// "/api" hata kar sirf backend ka base address bana leta hai.
+const BACKEND_URL = (
+  import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+).replace(/\/api\/?$/, '')
+
 export default function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -29,8 +35,7 @@ export default function Login() {
   }
 
   const handleGithubLogin = () => {
-    window.location.href =
-      'http://localhost:8000/accounts/github/login/'
+    window.location.href = `${BACKEND_URL}/accounts/github/login/`
   }
 
   return (
