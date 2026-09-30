@@ -16,7 +16,14 @@ function App() {
       <Routes>
         <Route path="/" element={<Explore />} />
         <Route path="/projects/:slug" element={<ProjectDetail />} />
-        <Route path="/upload" element={<UploadWizard />} />
+        <Route
+          path="/upload"
+          element={
+            <ProtectedRoute>
+              <UploadWizard />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route

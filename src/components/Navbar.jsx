@@ -1,11 +1,17 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useTheme } from '@/context/ThemeContext'
 import { useAuth } from '@/context/AuthContext'
 import { Button } from '@/components/ui/button'
 
 export default function Navbar() {
   const { isDark, toggleTheme } = useTheme()
-  const { user } = useAuth()
+  const { user, isLoading, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
 
   return (
     <nav className="border-b dark:border-gray-800 bg-white dark:bg-gray-950">
@@ -39,6 +45,33 @@ export default function Navbar() {
               +
             </Button>
           </Link>
+
+          {/* Login / Register / Logout */}
+          {!isLoading && !user && (
+            <>
+              <Link to="/login">
+                <Button size="sm" variant="ghost">
+                  Login
+                </Button>
+              </Link>
+              <Link to="/register">
+                <Button size="sm" variant="outline">
+                  Register
+                </Button>
+              </Link>
+            </>
+          )}
+
+          {!isLoading && user && (
+            <>
+              <span className="hidden sm:inline text-sm text-gray-600 dark:text-gray-300">
+                {user.username}
+              </span>
+              <Button size="sm" variant="outline" onClick={handleLogout}>
+                Logout
+              </Button>
+            </>
+          )}
 
           {/* Theme Toggle */}
           <Button
