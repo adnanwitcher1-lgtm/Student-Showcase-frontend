@@ -37,7 +37,7 @@ export default function ProjectDetail() {
           <OverviewTab project={project} />
         </TabsContent>
         <TabsContent value="demo">
-          <DemoTab slug={slug} />
+          <DemoTab slug={slug} project={project} />
         </TabsContent>
         <TabsContent value="github">
           <GitHubTab slug={slug} />
@@ -114,8 +114,8 @@ function OverviewTab({ project }) {
   )
 }
 
-function DemoTab({ slug }) {
-  const { data, isLoading, isError } = useQuery({
+function DemoTab({ slug, project }) {
+  const { data, isLoading } = useQuery({
     queryKey: ['demo-url', slug],
     queryFn: async () => {
       const res = await apiClient.get(`/projects/${slug}/demo-url/`)
@@ -124,20 +124,39 @@ function DemoTab({ slug }) {
     retry: false,
   })
 
+  const liveUrl = project?.live_demo_url
+  const hasUploadedDemo = Boolean(data?.demo_url)
+
   if (isLoading) return <p className="py-4">Loading demo...</p>
-  if (isError) return <p className="py-4 text-gray-500">No live demo available for this project.</p>
+
+  if (!liveUrl && !hasUploadedDemo) {
+    return <p className="py-4 text-gray-500">No live demo available for this project.</p>
+  }
 
   return (
-    <div className="py-4">
-      <iframe
-        src={data.demo_url}
-        title="Live Demo"
-        className="w-full h-96 border rounded-lg"
-        sandbox="allow-scripts allow-same-origin"
-      />
-      <p className="text-xs text-gray-400 mt-2">
-        This link expires in {data.expires_in_seconds} seconds.
-      </p>
+    <div className="py-4 space-y-4">
+      {liveUrl && (
+        <div>
+          <a href={liveUrl} target="_blank" rel="noopener noreferrer">
+            <Button>Open live demo ↗</Button>
+          </a>
+          <p className="text-xs text-gray-400 mt-2 break-all">{liveUrl}</p>
+        </div>
+      )}
+
+      {hasUploadedDemo && (
+        <div>
+          <iframe
+            src={data.demo_url}
+            title="Live Demo"
+            className="w-full h-96 border rounded-lg"
+            sandbox="allow-scripts allow-same-origin"
+          />
+          <p className="text-xs text-gray-400 mt-2">
+            This link expires in {data.expires_in_seconds} seconds.
+          </p>
+        </div>
+      )}
     </div>
   )
 }

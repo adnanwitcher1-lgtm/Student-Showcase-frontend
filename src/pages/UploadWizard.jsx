@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import apiClient from '@/lib/api'
 import { uploadSchema } from '@/lib/uploadSchema'
 import { Button } from '@/components/ui/button'
@@ -10,6 +11,33 @@ import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
 
 const STEPS = ['Basic Info', 'Media', 'Links', 'Review']
+
+// Backend ke error response se readable message nikalta hai
+function getErrorMessage(err, fallback) {
+  const data = err?.response?.data
+  if (!data) return fallback
+  if (typeof data === 'string') return fallback
+  if (data.detail) return data.detail
+  if (data.errors?.length) {
+    const first = data.errors[0]
+    const key = Object.keys(first)[0]
+    const msgs = first[key]
+    return `${key}: ${JSON.stringify(msgs)}`
+  }
+  const firstKey = Object.keys(data)[0]
+  if (firstKey) {
+    const val = data[firstKey]
+    return `${firstKey}: ${Array.isArray(val) ? val.join(' ') : String(val)}`
+  }
+  return fallback
+}
+
+const fileInputClass =
+  'block w-full text-sm text-gray-600 dark:text-gray-300 ' +
+  'file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 ' +
+  'file:text-sm file:font-medium file:bg-gray-900 file:text-white ' +
+  'hover:file:bg-gray-700 file:cursor-pointer ' +
+  'border border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-3'
 
 export default function UploadWizard() {
   const [step, setStep] = useState(0)
@@ -34,10 +62,20 @@ export default function UploadWizard() {
         const res = await apiClient.post('/projects/', payload)
         setProjectSlug(res.data.slug)
         return res.data
-      } else {
-        const res = await apiClient.patch(`/projects/${projectSlug}/`, payload)
-        return res.data
       }
+      const res = await apiClient.patch(`/projects/${projectSlug}/`, payload)
+      return res.data
+    },
+  })
+
+  const uploadCover = useMutation({
+    mutationFn: async (file) => {
+      const formData = new FormData()
+      formData.append('cover_image', file)
+      const res = await apiClient.patch(`/projects/${projectSlug}/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      return res.data
     },
   })
 
@@ -57,7 +95,13 @@ export default function UploadWizard() {
       const res = await apiClient.post(`/projects/${projectSlug}/submit/`)
       return res.data
     },
-    onSuccess: () => navigate(`/projects/${projectSlug}`),
+    onSuccess: () => {
+      toast.success('Project submitted for review!')
+      navigate(`/projects/${projectSlug}`)
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, 'Could not submit the project. Please try again.'))
+    },
   })
 
   const stepFields = {
@@ -67,24 +111,43 @@ export default function UploadWizard() {
     3: [],
   }
 
+  const isBusy =
+    saveDraft.isPending || uploadCover.isPending || uploadScreenshots.isPending
+
   const handleNext = async () => {
     const fieldsToValidate = stepFields[step]
     const isValid = fieldsToValidate.length === 0 || (await trigger(fieldsToValidate))
     if (!isValid) return
 
-    if (step === 0) {
-      await saveDraft.mutateAsync({
-        title: values.title,
-        description: values.description,
-        status: 'draft',
-      })
-    } else if (step === 1 && values.screenshots?.length) {
-      await uploadScreenshots.mutateAsync(values.screenshots)
-    } else if (step === 2) {
-      await saveDraft.mutateAsync({
-        github_url: values.github_url || '',
-        live_demo_url: values.live_demo_url || '',
-      })
+    try {
+      if (step === 0) {
+        await saveDraft.mutateAsync({
+          title: values.title,
+          description: values.description,
+          status: 'draft',
+        })
+        toast.success('Draft saved.')
+      } else if (step === 1) {
+        const cover = values.cover_image?.[0]
+        const shots = values.screenshots
+
+        if (cover) {
+          await uploadCover.mutateAsync(cover)
+          toast.success('Cover image uploaded.')
+        }
+        if (shots?.length) {
+          await uploadScreenshots.mutateAsync(shots)
+          toast.success('Screenshots uploaded.')
+        }
+      } else if (step === 2) {
+        await saveDraft.mutateAsync({
+          github_url: values.github_url || '',
+          live_demo_url: values.live_demo_url || '',
+        })
+      }
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Something went wrong. Please try again.'))
+      return // error par agle step par mat jao
     }
 
     setStep((s) => Math.min(s + 1, STEPS.length - 1))
@@ -93,6 +156,9 @@ export default function UploadWizard() {
   const handleBack = () => setStep((s) => Math.max(s - 1, 0))
 
   const handleFinalSubmit = () => submitProject.mutate()
+
+  const coverName = values.cover_image?.[0]?.name
+  const shotNames = values.screenshots ? Array.from(values.screenshots).map((f) => f.name) : []
 
   return (
     <div className="max-w-xl mx-auto p-8">
@@ -118,9 +184,33 @@ export default function UploadWizard() {
       )}
 
       {step === 1 && (
-        <div className="space-y-4">
-          <label className="block text-sm font-medium">Screenshots</label>
-          <input type="file" multiple accept="image/*" {...register('screenshots')} />
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Cover image (card par dikhegi)</label>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className={fileInputClass}
+              {...register('cover_image')}
+            />
+            {coverName && <p className="text-xs text-gray-500">Selected: {coverName}</p>}
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium">Screenshots (optional, max 5 MB each)</label>
+            <input
+              type="file"
+              multiple
+              accept="image/png,image/jpeg,image/webp"
+              className={fileInputClass}
+              {...register('screenshots')}
+            />
+            {shotNames.length > 0 && (
+              <p className="text-xs text-gray-500">
+                Selected ({shotNames.length}): {shotNames.join(', ')}
+              </p>
+            )}
+          </div>
         </div>
       )}
 
@@ -145,22 +235,24 @@ export default function UploadWizard() {
         <div className="space-y-2 text-sm border rounded-lg p-4">
           <p><strong>Title:</strong> {values.title}</p>
           <p><strong>Description:</strong> {values.description}</p>
+          <p><strong>Cover image:</strong> {coverName || '—'}</p>
+          <p><strong>Screenshots:</strong> {shotNames.length || '—'}</p>
           <p><strong>GitHub:</strong> {values.github_url || '—'}</p>
           <p><strong>Live demo:</strong> {values.live_demo_url || '—'}</p>
         </div>
       )}
 
       <div className="flex justify-between mt-8">
-        <Button variant="outline" onClick={handleBack} disabled={step === 0}>
+        <Button variant="outline" onClick={handleBack} disabled={step === 0 || isBusy}>
           Back
         </Button>
         {step < STEPS.length - 1 ? (
-          <Button onClick={handleNext} disabled={saveDraft.isPending || uploadScreenshots.isPending}>
-            Next
+          <Button onClick={handleNext} disabled={isBusy}>
+            {isBusy ? 'Saving...' : 'Next'}
           </Button>
         ) : (
           <Button onClick={handleFinalSubmit} disabled={submitProject.isPending}>
-            Submit for Review
+            {submitProject.isPending ? 'Submitting...' : 'Submit for Review'}
           </Button>
         )}
       </div>
