@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import apiClient from '@/lib/api'
+import SocialButtons from '@/components/SocialButtons'
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -114,6 +115,8 @@ export default function Register() {
           Register
         </button>
       </form>
+
+      <SocialButtons />
     </div>
   )
 }
