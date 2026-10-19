@@ -7,6 +7,7 @@ import ProjectDetail from '@/pages/ProjectDetail'
 import UploadWizard from '@/pages/UploadWizard'
 import Login from '@/pages/Login'
 import AdminDashboard from '@/pages/AdminDashboard'
+import AuthCallback from '@/pages/AuthCallback'
 
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
         />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route
           path="/admin"
           element={
