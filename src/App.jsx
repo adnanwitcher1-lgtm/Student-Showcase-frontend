@@ -8,6 +8,8 @@ import UploadWizard from '@/pages/UploadWizard'
 import Login from '@/pages/Login'
 import AdminDashboard from '@/pages/AdminDashboard'
 import AuthCallback from '@/pages/AuthCallback'
+import MyProjects from '@/pages/MyProjects'
+import Profile from '@/pages/Profile'
 
 
 function App() {
@@ -22,6 +24,30 @@ function App() {
           element={
             <ProtectedRoute>
               <UploadWizard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/edit/:slug"
+          element={
+            <ProtectedRoute>
+              <UploadWizard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-projects"
+          element={
+            <ProtectedRoute>
+              <MyProjects />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
             </ProtectedRoute>
           }
         />
