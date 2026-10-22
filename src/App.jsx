@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom'
-import Navbar from '@/components/Navbar'
+import AppLayout from '@/components/layout/AppLayout'
 import Register from '@/pages/Register'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import Explore from '@/pages/Explore'
@@ -10,60 +10,29 @@ import AdminDashboard from '@/pages/AdminDashboard'
 import AuthCallback from '@/pages/AuthCallback'
 import MyProjects from '@/pages/MyProjects'
 import Profile from '@/pages/Profile'
+import Settings from '@/pages/Settings'
+import Leaderboard from '@/pages/Leaderboard'
 
+const guard = (el, roles) => <ProtectedRoute requiredRoles={roles}>{el}</ProtectedRoute>
 
 function App() {
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100">
-      <Navbar />
-      <Routes>
+    <Routes>
+      <Route element={<AppLayout />}>
         <Route path="/" element={<Explore />} />
         <Route path="/projects/:slug" element={<ProjectDetail />} />
-        <Route
-          path="/upload"
-          element={
-            <ProtectedRoute>
-              <UploadWizard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/edit/:slug"
-          element={
-            <ProtectedRoute>
-              <UploadWizard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/my-projects"
-          element={
-            <ProtectedRoute>
-              <MyProjects />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/upload" element={guard(<UploadWizard />)} />
+        <Route path="/edit/:slug" element={guard(<UploadWizard />)} />
+        <Route path="/my-projects" element={guard(<MyProjects />)} />
+        <Route path="/profile" element={guard(<Profile />)} />
+        <Route path="/settings" element={guard(<Settings />)} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute requiredRoles={['instructor', 'admin']}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </div>
+        <Route path="/admin" element={guard(<AdminDashboard />, ['instructor', 'admin'])} />
+      </Route>
+    </Routes>
   )
 }
 
