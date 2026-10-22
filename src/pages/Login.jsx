@@ -36,7 +36,7 @@ export default function Login() {
   }, [])
 
   return (
-    <div className="max-w-md mx-auto mt-12 p-8 border rounded-xl shadow-lg bg-white dark:bg-gray-900">
+    <div className="max-w-md mx-auto mt-12 p-8 border rounded-xl shadow-lg bg-card">
       <h1 className="text-3xl font-bold mb-6 text-center dark:text-white">
         Login
       </h1>
