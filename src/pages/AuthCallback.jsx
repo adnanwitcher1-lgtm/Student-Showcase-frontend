@@ -15,5 +15,5 @@ export default function AuthCallback() {
     }
   }, [])
 
-  return <p className="text-center mt-20 text-gray-500">Signing you in...</p>
+  return <p className="text-center mt-20 text-muted-foreground">Signing you in...</p>
 }
