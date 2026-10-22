@@ -10,9 +10,11 @@ import { selectClass, textareaClass, fileInputClass, getErrorMessage } from '@/l
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Progress } from '@/components/ui/progress'
+import { Clapperboard } from 'lucide-react'
 
 const STEPS = ['Basic Info', 'Media', 'Links', 'Review']
 const MAX_ZIP_MB = 20
+const MAX_VIDEO_MB = 100
 
 // Ek hi wizard: /upload (naya project) aur /edit/:slug (draft/rejected project edit + resubmit)
 export default function UploadWizard() {
@@ -23,6 +25,8 @@ export default function UploadWizard() {
   const [projectSlug, setProjectSlug] = useState(editSlug || null)
   const [techOverride, setTechOverride] = useState(null) // null = abhi user ne chhua nahi
   const [zipFile, setZipFile] = useState(null)
+  const [videoFile, setVideoFile] = useState(null)
+  const [videoProgress, setVideoProgress] = useState(0)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
@@ -117,6 +121,20 @@ export default function UploadWizard() {
     },
   })
 
+  const uploadVideo = useMutation({
+    mutationFn: async (file) => {
+      const formData = new FormData()
+      formData.append('demo_video', file)
+      setVideoProgress(0)
+      const res = await apiClient.patch(`/projects/${projectSlug}/`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 0,
+        onUploadProgress: (e) => e.total && setVideoProgress(Math.round((e.loaded / e.total) * 100)),
+      })
+      return res.data
+    },
+  })
+
   const finish = useMutation({
     mutationFn: async () => {
       // Draft ya rejected hi submit ho sakta hai. Approved/submitted project mein sirf changes save hoti hain.
@@ -142,7 +160,7 @@ export default function UploadWizard() {
   }
 
   const isBusy =
-    saveDraft.isPending || uploadCover.isPending || uploadScreenshots.isPending || uploadSite.isPending
+    saveDraft.isPending || uploadCover.isPending || uploadScreenshots.isPending || uploadSite.isPending || uploadVideo.isPending
 
   const handleNext = async () => {
     const fieldsToValidate = stepFields[step]
@@ -175,6 +193,11 @@ export default function UploadWizard() {
           github_url: values.github_url || '',
           live_demo_url: values.live_demo_url || '',
         })
+        if (videoFile) {
+          await uploadVideo.mutateAsync(videoFile)
+          setVideoFile(null)
+          toast.success('Demo video uploaded.')
+        }
         if (zipFile) {
           await uploadSite.mutateAsync(zipFile)
           toast.success('Static site is being deployed. It will be live in about a minute.')
@@ -189,6 +212,21 @@ export default function UploadWizard() {
   }
 
   const handleBack = () => setStep((s) => Math.max(s - 1, 0))
+
+  const handleVideo = (e) => {
+    const file = e.target.files?.[0] || null
+    if (file && !/\.(mp4|webm|mov)$/i.test(file.name)) {
+      toast.error('Video must be an MP4, WebM or MOV file.')
+      e.target.value = ''
+      return setVideoFile(null)
+    }
+    if (file && file.size > MAX_VIDEO_MB * 1024 * 1024) {
+      toast.error(`Video cannot exceed ${MAX_VIDEO_MB} MB.`)
+      e.target.value = ''
+      return setVideoFile(null)
+    }
+    setVideoFile(file)
+  }
 
   const handleZip = (e) => {
     const file = e.target.files?.[0] || null
@@ -215,15 +253,16 @@ export default function UploadWizard() {
   const willSubmit = ['draft', 'rejected'].includes(projectStatus)
 
   return (
-    <div className="max-w-xl mx-auto p-4 sm:p-8">
-      <h1 className="text-2xl font-bold mb-2">{isEdit ? 'Edit Project' : 'Upload Project'}</h1>
+    <div className="mx-auto max-w-2xl p-4 sm:p-8">
+     <div className="rounded-3xl border bg-card p-5 sm:p-8 shadow-xl shadow-primary/5">
+      <h1 className="text-2xl font-bold mb-2 text-brand-gradient w-fit">{isEdit ? 'Edit Project' : 'Upload Project'}</h1>
       <Progress value={((step + 1) / STEPS.length) * 100} className="mb-6" />
       <p className="text-sm text-gray-500 mb-6">
         Step {step + 1} of {STEPS.length}: {STEPS[step]}
       </p>
 
       {isEdit && existing?.status === 'rejected' && existing.rejection_reason && (
-        <div className="mb-6 rounded-lg border border-red-300 bg-red-50 dark:bg-red-950/30 dark:border-red-900 p-3 text-sm text-red-700 dark:text-red-300">
+        <div className="mb-6 rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-300">
           <strong>Rejected:</strong> {existing.rejection_reason}
         </div>
       )}
@@ -271,8 +310,8 @@ export default function UploadWizard() {
                     onClick={() => toggleTech(t.id)}
                     className={`rounded-full border px-3 py-1 text-xs transition ${
                       on
-                        ? 'bg-gray-900 text-white border-gray-900 dark:bg-white dark:text-gray-900 dark:border-white'
-                        : 'border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800'
+                        ? 'bg-brand-gradient text-white border-transparent shadow shadow-primary/30'
+                        : 'border-border hover:border-primary/60 hover:bg-primary/10'
                     }`}
                   >
                     {t.name}
@@ -287,7 +326,7 @@ export default function UploadWizard() {
       {step === 1 && (
         <div className="space-y-6">
           <div className="space-y-2">
-            <label className="block text-sm font-medium">Cover image (card par dikhegi)</label>
+            <label className="block text-sm font-medium">Cover image (shown on the project card)</label>
             {isEdit && existing?.cover_image && !coverName && (
               <img src={existing.cover_image} alt="Current cover" className="h-24 rounded-lg object-cover" />
             )}
@@ -339,6 +378,27 @@ export default function UploadWizard() {
             )}
           </div>
 
+          <div className="space-y-2 rounded-2xl border border-dashed border-primary/40 bg-primary/5 p-4">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <Clapperboard className="size-4 text-primary" /> Demo video (optional)
+            </label>
+            <p className="text-xs text-muted-foreground">
+              No live link? Upload a short screen recording instead (MP4, WebM or MOV, max {MAX_VIDEO_MB} MB).
+              Visitors can watch it on your project page.
+            </p>
+            {isEdit && existing?.demo_video && !videoFile && (
+              <p className="text-xs text-emerald-500">A demo video is already uploaded. Choose a file to replace it.</p>
+            )}
+            <input type="file" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov" className={fileInputClass} onChange={handleVideo} />
+            {videoFile && <p className="text-xs text-muted-foreground">Selected: {videoFile.name} ({(videoFile.size / 1024 / 1024).toFixed(1)} MB)</p>}
+            {uploadVideo.isPending && (
+              <div className="space-y-1">
+                <Progress value={videoProgress} />
+                <p className="text-xs text-muted-foreground">Uploading video… {videoProgress}%</p>
+              </div>
+            )}
+          </div>
+
           <div className="space-y-2 border-t pt-5">
             <label className="block text-sm font-medium">Host a static website (optional)</label>
             <p className="text-xs text-gray-500">
@@ -361,6 +421,7 @@ export default function UploadWizard() {
           <p><strong>New screenshots:</strong> {shotNames.length || '—'}</p>
           <p><strong>GitHub:</strong> {values.github_url || '—'}</p>
           <p><strong>Live demo:</strong> {values.live_demo_url || '—'}</p>
+          <p><strong>Demo video:</strong> {videoFile ? videoFile.name : existing?.demo_video ? 'Already uploaded' : '—'}</p>
           <p><strong>Hosted site:</strong> {zipFile ? zipFile.name : '—'}</p>
         </div>
       )}
@@ -379,6 +440,7 @@ export default function UploadWizard() {
           </Button>
         )}
       </div>
+     </div>
     </div>
   )
 }
