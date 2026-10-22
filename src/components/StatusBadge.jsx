@@ -1,8 +1,8 @@
 const STYLES = {
-  draft: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
-  submitted: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-  approved: 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-  rejected: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
+  draft: 'bg-slate-500/15 text-slate-600 dark:text-slate-300 ring-slate-500/30',
+  submitted: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 ring-amber-500/30',
+  approved: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-emerald-500/30',
+  rejected: 'bg-red-500/15 text-red-700 dark:text-red-300 ring-red-500/30',
 }
 
 const LABELS = {
@@ -16,7 +16,7 @@ export default function StatusBadge({ status }) {
   if (!status) return null
   return (
     <span
-      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ${
+      className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-medium ring-1 backdrop-blur ${
         STYLES[status] || STYLES.draft
       }`}
     >
