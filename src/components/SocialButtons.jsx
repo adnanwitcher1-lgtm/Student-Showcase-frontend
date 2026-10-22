@@ -47,7 +47,7 @@ export default function SocialButtons() {
     <div>
       <div className="my-6 flex items-center">
         <div className="flex-grow border-t"></div>
-        <span className="mx-4 text-gray-500">OR</span>
+        <span className="mx-4 text-muted-foreground">OR</span>
         <div className="flex-grow border-t"></div>
       </div>
 
