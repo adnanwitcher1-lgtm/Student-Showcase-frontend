@@ -93,8 +93,8 @@ export default function AdminDashboard() {
       {!statsLoading && stats && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           {/* Total Projects */}
-          <div className="border dark:border-gray-800 rounded-lg p-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="border dark:border-border rounded-lg p-4">
+            <p className="text-sm text-muted-foreground dark:text-muted-foreground">
               Total Projects
             </p>
             <p className="text-2xl font-bold dark:text-white">
@@ -103,8 +103,8 @@ export default function AdminDashboard() {
           </div>
 
           {/* Total Students */}
-          <div className="border dark:border-gray-800 rounded-lg p-4">
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="border dark:border-border rounded-lg p-4">
+            <p className="text-sm text-muted-foreground dark:text-muted-foreground">
               Total Students
             </p>
             <p className="text-2xl font-bold dark:text-white">
@@ -113,8 +113,8 @@ export default function AdminDashboard() {
           </div>
 
           {/* Top Liked Projects */}
-          <div className="border dark:border-gray-800 rounded-lg p-4 md:col-span-1">
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+          <div className="border dark:border-border rounded-lg p-4 md:col-span-1">
+            <p className="text-sm text-muted-foreground dark:text-muted-foreground mb-2">
               Top Liked Projects
             </p>
 
@@ -133,8 +133,8 @@ export default function AdminDashboard() {
           </div>
 
           {/* Weekly Views Trend */}
-          <div className="border dark:border-gray-800 rounded-lg p-4 md:col-span-3">
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+          <div className="border dark:border-border rounded-lg p-4 md:col-span-3">
+            <p className="text-sm text-muted-foreground dark:text-muted-foreground mb-2">
               Weekly Views Trend
             </p>
 
@@ -158,7 +158,7 @@ export default function AdminDashboard() {
 
       {/* Pending Projects */}
       {projects.length === 0 && (
-        <p className="text-gray-500 dark:text-gray-400">
+        <p className="text-muted-foreground dark:text-muted-foreground">
           No projects waiting for review.
         </p>
       )}
@@ -167,13 +167,13 @@ export default function AdminDashboard() {
         {projects.map((project) => (
           <div
             key={project.id}
-            className="border dark:border-gray-800 rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+            className="border dark:border-border rounded-lg p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
           >
             <div>
               <p className="font-semibold dark:text-white">
                 {project.title}
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground dark:text-muted-foreground">
                 by {project.owner} · {project.category || 'Uncategorized'}
               </p>
             </div>
